@@ -223,10 +223,15 @@ img { max-width: 100%; display: block; }
   font-weight: 700;
   font-size: 1.05rem;
 }
-.promo-inner a {
+.btn-promo {
+  background: var(--dark);
   color: #fff;
-  text-decoration: underline;
-  font-weight: 800;
+  padding: 10px 22px;
+  font-size: 0.92rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+.btn-promo:hover {
+  background: #000;
 }
 
 /* Section titles */
