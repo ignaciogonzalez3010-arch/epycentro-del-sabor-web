@@ -54,8 +54,13 @@ if (clubForm) {
         throw new Error(data.error || "Ocurrió un error");
       }
 
-      clubMsg.textContent = "¡Listo! Revisa tu correo, te enviamos tu código de descuento.";
-      clubMsg.classList.add("club-form-msg-success");
+      if (data.yaRegistrado) {
+        clubMsg.textContent = "Ese correo ya está registrado en el Club Epycentro. Revisa tu bandeja de entrada (o spam) por el correo de bienvenida.";
+        clubMsg.classList.add("club-form-msg-info");
+      } else {
+        clubMsg.textContent = "¡Listo! Revisa tu correo, te enviamos tu código de descuento.";
+        clubMsg.classList.add("club-form-msg-success");
+      }
       clubForm.reset();
     } catch (error) {
       clubMsg.textContent = "No pudimos procesar tu registro. Intenta nuevamente o escríbenos por WhatsApp.";

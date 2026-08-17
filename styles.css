@@ -367,6 +367,7 @@ img { max-width: 100%; display: block; }
 }
 .club-form-msg-success { color: #4ade80; }
 .club-form-msg-error { color: #f87171; }
+.club-form-msg-info { color: #fbbf24; }
 
 /* Location */
 .location {

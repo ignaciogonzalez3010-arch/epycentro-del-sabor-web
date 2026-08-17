@@ -19,15 +19,44 @@ module.exports = async function handler(req, res) {
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Epycentro del Sabor <onboarding@resend.dev>";
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!RESEND_API_KEY) {
     console.error("Falta configurar la variable de entorno RESEND_API_KEY");
     return res.status(500).json({ error: "Error de configuración del servidor" });
   }
 
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error("Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
+    return res.status(500).json({ error: "Error de configuración del servidor" });
+  }
+
   const safeNombre = String(nombre).trim().slice(0, 100);
+  const safeTelefono = String(telefono).trim().slice(0, 30);
 
   try {
+    const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/club_subscribers`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ nombre: safeNombre, email, telefono: safeTelefono }),
+    });
+
+    if (insertResponse.status === 409) {
+      return res.status(200).json({ ok: true, yaRegistrado: true });
+    }
+
+    if (!insertResponse.ok) {
+      const errorText = await insertResponse.text();
+      console.error("Error al guardar en Supabase:", errorText);
+      return res.status(502).json({ error: "No se pudo procesar tu registro" });
+    }
+
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
