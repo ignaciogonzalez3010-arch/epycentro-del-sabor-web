@@ -157,7 +157,7 @@ async function appendToGoogleSheet(nombre, email, telefono) {
   }
 
   const accessToken = await getGoogleAccessToken();
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=USER_ENTERED`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=RAW`;
 
   const response = await fetch(url, {
     method: "POST",
