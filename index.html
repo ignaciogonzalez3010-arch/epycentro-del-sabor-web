@@ -19,6 +19,7 @@
     <nav class="nav" id="mainNav">
       <a href="#inicio">Inicio</a>
       <a href="#menu">Menú</a>
+      <a href="#club">Club Epycentro</a>
       <a href="#ubicacion">Ubicación</a>
       <a href="#contacto">Contacto</a>
       <a href="https://pedifast.app/epycentro-del-sabor" target="_blank" rel="noopener" class="btn btn-primary nav-cta">Pedir ahora</a>
@@ -105,6 +106,32 @@
       <div class="menu-cta">
         <a href="https://pedifast.app/epycentro-del-sabor" target="_blank" rel="noopener" class="btn btn-primary">Ver menú completo y precios</a>
       </div>
+    </div>
+  </section>
+
+  <section class="club" id="club">
+    <div class="container club-inner">
+      <h2 class="section-title">Únete al Club Epycentro</h2>
+      <p class="section-subtitle">Regístrate gratis y recibe un 10% de descuento en tu próximo pedido, directo a tu correo.</p>
+
+      <form id="clubForm" class="club-form" novalidate>
+        <div class="form-row">
+          <label for="clubNombre">Nombre</label>
+          <input type="text" id="clubNombre" name="nombre" placeholder="Tu nombre" autocomplete="name" required>
+        </div>
+        <div class="form-row">
+          <label for="clubEmail">Correo electrónico</label>
+          <input type="email" id="clubEmail" name="email" placeholder="tu@correo.com" autocomplete="email" required>
+        </div>
+        <div class="form-row">
+          <label for="clubTelefono">Teléfono</label>
+          <input type="tel" id="clubTelefono" name="telefono" placeholder="+56 9 1234 5678" autocomplete="tel" required>
+        </div>
+        <button type="submit" class="btn btn-primary club-submit">
+          <span class="club-submit-text">Quiero mi 10% de descuento</span>
+        </button>
+        <p class="club-form-msg" id="clubFormMsg" role="status" aria-live="polite"></p>
+      </form>
     </div>
   </section>
 
