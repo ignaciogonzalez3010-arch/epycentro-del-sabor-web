@@ -1,5 +1,8 @@
+const crypto = require("crypto");
+
 const DISCOUNT_CODE = "BIENVENIDA10";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -57,6 +60,12 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: "No se pudo procesar tu registro" });
     }
 
+    try {
+      await appendToGoogleSheet(safeNombre, email, safeTelefono);
+    } catch (sheetError) {
+      console.error("Error al guardar en Google Sheets (no bloqueante):", sheetError);
+    }
+
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -83,6 +92,89 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 };
+
+function base64url(input) {
+  return Buffer.from(input)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+async function getGoogleAccessToken() {
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const privateKey = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+
+  if (!clientEmail || !privateKey) {
+    throw new Error("Falta configurar GOOGLE_SERVICE_ACCOUNT_EMAIL o GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const claims = {
+    iss: clientEmail,
+    scope: GOOGLE_SHEETS_SCOPE,
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claims))}`;
+  const signer = crypto.createSign("RSA-SHA256");
+  signer.update(unsigned);
+  signer.end();
+  const signature = signer
+    .sign(privateKey)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  const assertion = `${unsigned}.${signature}`;
+
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorText = await tokenResponse.text();
+    throw new Error(`No se pudo obtener token de Google: ${errorText}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
+
+async function appendToGoogleSheet(nombre, email, telefono) {
+  const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
+
+  if (!spreadsheetId) {
+    throw new Error("Falta configurar GOOGLE_SHEETS_SPREADSHEET_ID");
+  }
+
+  const accessToken = await getGoogleAccessToken();
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:D:append?valueInputOption=USER_ENTERED`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      values: [[nombre, email, telefono, new Date().toISOString()]],
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Error al escribir en Google Sheets: ${errorText}`);
+  }
+}
 
 function buildWelcomeEmailHtml(nombre) {
   const saludo = nombre ? `¡Hola ${nombre}!` : "¡Hola!";

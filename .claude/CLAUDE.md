@@ -52,23 +52,55 @@ ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsA
     formulario muestra "ese correo ya está registrado" (`club-form-msg-info` en
     `script.js`/`styles.css`) en vez del mensaje de éxito.
   - Proyecto de Supabase, ref `qiojigkgnthpopczccnb` → URL `https://qiojigkgnthpopczccnb.supabase.co`.
+- **Persistencia de leads (Google Sheets), agregado 2026-08-17:** además de Supabase (se
+  mantienen los dos a propósito, decisión del usuario), `api/subscribe.js` escribe cada
+  suscripción nueva en una fila de Google Sheets vía la API REST de Sheets, autenticado con
+  una **cuenta de servicio de Google Cloud** (JWT firmado a mano con `crypto` de Node,
+  sin librerías npm — mismo patrón zero-dependency que el resto del proyecto).
+  - Hoja: "Club Epycentro - Suscriptores", creada por el usuario (no por la cuenta de
+    servicio — **las cuentas de servicio sin Google Workspace no tienen cuota de Drive
+    propia y no pueden crear archivos nuevos**, solo editar archivos existentes que se
+    les compartan). Compartida con Editor a la cuenta de servicio.
+  - Spreadsheet ID: `1JyToEgVFeXZTzNPMvcJZTAx01OMzvzm63WiGuooP3hU`. Columnas en fila 1:
+    `Nombre | Correo | Telefono | Fecha`.
+  - Proyecto de Google Cloud: `careful-sun-344518`. Cuenta de servicio:
+    `epycentro@careful-sun-344518.iam.gserviceaccount.com`. APIs habilitadas: **Google
+    Sheets API** y **Google Drive API** (esta última hace falta aunque solo se use Sheets,
+    si no se habilita da error 403 "The caller does not have permission" al intentar
+    operar sobre el archivo).
+  - Variables de entorno en Vercel: `GOOGLE_SERVICE_ACCOUNT_EMAIL`,
+    `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (el PEM completo; el código acepta tanto saltos
+    de línea reales como `\n` literales), `GOOGLE_SHEETS_SPREADSHEET_ID`.
+  - La escritura a Sheets es **best-effort / no bloqueante**: si falla o si las env vars no
+    están configuradas, solo se registra un `console.error` y el flujo sigue (Supabase +
+    correo de bienvenida no se ven afectados).
+  - El archivo JSON de la cuenta de servicio (con la private key) quedó descargado en
+    `C:\Users\ignac\Downloads\careful-sun-344518-9e2a3c3e8ad1.json` — **no está en el
+    repo**, solo se usó localmente para extraer las credenciales y cargarlas a Vercel.
 
 ## Despliegue
 
-- Desplegado en **Vercel**, proyecto `epycentro-del-sabor-web`, conectado al repo de GitHub
+- Desplegado en **Vercel**, proyecto `epycentro-del-sabor-web` (id `prj_WyVvqyTYjKdcb6Xmep4uCjIRuN1S`,
+  team `team_XXRDTUWm7ErEH6VFRKeZY3NL`), conectado al repo de GitHub
   `ignaciogonzalez3010-arch/epycentro-del-sabor-web` (rama `main`, deploy automático en cada push).
-- `RESEND_API_KEY` ya está configurada en Vercel → Settings → Environment Variables (ambiente
-  Production) y **verificada funcionando**: el formulario del Club Epycentro se probó
-  end-to-end el 2026-08-16 y el correo de bienvenida con `BIENVENIDA10` llegó correctamente.
+  Dominio de producción: `epycentro-del-sabor-web.vercel.app`.
+- Variables de entorno configuradas en Vercel (Production), todas **verificadas funcionando**:
+  - `RESEND_API_KEY` — probada end-to-end el 2026-08-16 (correo con `BIENVENIDA10` llegó bien).
+  - `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` — agregadas y probadas el 2026-08-17
+    (insert/delete de prueba en `club_subscribers` vía API funcionó correctamente).
 - Recordatorio para futuros problemas con variables de entorno en Vercel: al guardar una
-  variable "Sensitive", el campo Value puede *parecer* que tiene un valor (texto gris tipo
-  `re_aBcDe…`) cuando en realidad está vacío — eso es un placeholder, no el valor guardado.
-  Si una función se queja de que falta una env var que "sí está" en la lista, revisar que el
-  campo Value tenga contenido real (no solo el placeholder) y hacer Redeploy después de
-  guardar (las env vars nuevas no aplican a deployments ya existentes).
+  variable "Sensitive" desde el dashboard, el campo Value puede *parecer* que tiene un valor
+  (texto gris tipo `re_aBcDe…`) cuando en realidad está vacío — eso es un placeholder, no el
+  valor guardado. Si una función se queja de que falta una env var que "sí está" en la lista,
+  revisar que el campo Value tenga contenido real y hacer Redeploy después de guardar (las
+  env vars nuevas no aplican a deployments ya existentes). Crear/editar variables por la API
+  de Vercel (como se hizo el 2026-08-17) evita este problema de raíz.
 
 ## Últimos cambios (commits)
 
+- `a1debab` — `api/subscribe.js` guarda cada suscripción en Supabase (`club_subscribers`)
+  antes de mandar el correo; si el correo ya existe, no reenvía y el formulario avisa
+  "ya estás registrado". Desplegado y probado en producción.
 - `8907566` — Formulario "Club Epycentro" (10% dcto.) + función serverless
   `api/subscribe.js` que envía correo de bienvenida vía Resend. Desplegado en Vercel y
   probado funcionando.
