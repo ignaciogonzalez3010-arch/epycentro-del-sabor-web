@@ -77,17 +77,33 @@ ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsA
   - El archivo JSON de la cuenta de servicio (con la private key) quedó descargado en
     `C:\Users\ignac\Downloads\careful-sun-344518-9e2a3c3e8ad1.json` — **no está en el
     repo**, solo se usó localmente para extraer las credenciales y cargarlas a Vercel.
+  - Se escribe con `valueInputOption=RAW` (no `USER_ENTERED`): con `USER_ENTERED`, Sheets
+    interpreta el `+` inicial de los teléfonos como parte de una fórmula/número y lo pierde
+    (`+56912345678` quedaba guardado como `56912345678`). Con `RAW` se guarda el texto tal
+    cual se manda.
 
 ## Despliegue
 
 - Desplegado en **Vercel**, proyecto `epycentro-del-sabor-web` (id `prj_WyVvqyTYjKdcb6Xmep4uCjIRuN1S`,
   team `team_XXRDTUWm7ErEH6VFRKeZY3NL`), conectado al repo de GitHub
-  `ignaciogonzalez3010-arch/epycentro-del-sabor-web` (rama `main`, deploy automático en cada push).
-  Dominio de producción: `epycentro-del-sabor-web.vercel.app`.
+  `ignaciogonzalez3010-arch/epycentro-del-sabor-web` (rama `main`, en teoría deploy
+  automático en cada push — ver aviso abajo). Dominio de producción:
+  `epycentro-del-sabor-web.vercel.app`.
+- **⚠️ Pendiente de revisar:** el 2026-08-17 dos pushes seguidos a `main` (commits `57bf2e6`
+  y `b36d36f`) **no dispararon un deploy automático** en Vercel (el último deployment
+  quedaba pegado en el commit anterior). Hubo que crear el deployment a mano vía la API de
+  Vercel (`POST /v13/deployments` con `gitSource`) las dos veces. Vale la pena revisar la
+  integración de Git del proyecto en Vercel (Settings → Git) por si el webhook de GitHub se
+  desconectó o perdió permisos — si no se soluciona, futuros pushes van a quedar sin
+  desplegar hasta que alguien dispare el deploy manualmente (desde el dashboard de Vercel
+  con "Redeploy", o pidiéndomelo).
 - Variables de entorno configuradas en Vercel (Production), todas **verificadas funcionando**:
   - `RESEND_API_KEY` — probada end-to-end el 2026-08-16 (correo con `BIENVENIDA10` llegó bien).
   - `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` — agregadas y probadas el 2026-08-17
     (insert/delete de prueba en `club_subscribers` vía API funcionó correctamente).
+  - `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`,
+    `GOOGLE_SHEETS_SPREADSHEET_ID` — agregadas y probadas el 2026-08-17 end-to-end contra
+    `/api/subscribe` en producción (con `RAW` ya corregido).
 - Recordatorio para futuros problemas con variables de entorno en Vercel: al guardar una
   variable "Sensitive" desde el dashboard, el campo Value puede *parecer* que tiene un valor
   (texto gris tipo `re_aBcDe…`) cuando en realidad está vacío — eso es un placeholder, no el
@@ -98,6 +114,10 @@ ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsA
 
 ## Últimos cambios (commits)
 
+- `b36d36f` — Fix: usar `RAW` en vez de `USER_ENTERED` al escribir en Google Sheets (el `+`
+  de los teléfonos se perdía).
+- `57bf2e6` — `api/subscribe.js` también guarda cada suscripción en Google Sheets (además de
+  Supabase), vía cuenta de servicio de Google Cloud. Desplegado y probado en producción.
 - `a1debab` — `api/subscribe.js` guarda cada suscripción en Supabase (`club_subscribers`)
   antes de mandar el correo; si el correo ya existe, no reenvía y el formulario avisa
   "ya estás registrado". Desplegado y probado en producción.
