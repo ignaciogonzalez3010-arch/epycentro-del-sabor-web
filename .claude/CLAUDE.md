@@ -3,12 +3,23 @@
 Landing page estática (sin framework/build): `index.html`, `styles.css`, `script.js`, assets en `assets/`.
 Un endpoint serverless en `api/subscribe.js` (Vercel) para el formulario del Club Epycentro.
 
-## Estado actual (2026-08-16)
+## Estado actual (2026-08-17)
 
-Secciones de la página: header con nav sticky + menú hamburguesa, hero, franja promocional
-(banda con link a Pedifast como botón), menú (grid de tarjetas: hamburguesas, completos,
-papas fritas, empanadas, sushi, sandwiches), **Club Epycentro** (formulario de suscripción),
+Secciones de la página: header con nav sticky + menú hamburguesa (CTA "Pedir ahora" fuera
+del `<nav>`, header-inner en grid de 4 columnas), hero ("EL SABOR QUE MUEVE TU DÍA"), **nav
+rápido de categorías** (iconos circulares que enlazan a `#menu`), franja promocional (banda
+con link a Pedifast como botón), **banner de fotos del menú** (grid de 6 imágenes con overlay
+"Nuestro Menú"), menú (grid de tarjetas con badges de color: hamburguesas, completos, papas
+fritas, empanadas, sushi, sandwiches), **Club Epycentro** (formulario de suscripción),
 ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsApp) y footer.
+
+- **Rediseño visual 2026-08-17:** el usuario trabajó el diseño en una herramienta externa
+  ("Claude Design") y pegó los archivos resultantes (`index.html`, `styles.css`, `script.js`)
+  en el chat — llegaron con la codificación rota (mojibake tipo `Ã³` en vez de `ó`, típico de
+  UTF-8 mal reinterpretado). Se reparó con un round-trip `cp1252 → utf-8` y se completaron a
+  mano los ~9 caracteres no recuperables (emojis y acentos) comparando contra la versión
+  anterior. `script.js` resultó *idéntico* al existente (sin cambios reales, solo la
+  mojibake); solo `index.html` y `styles.css` cambiaron. Commit `39c1ec1`.
 
 - Pedidos online: Pedifast (`https://pedifast.app/epycentro-del-sabor`), enlazado en varios
   botones (nav, hero, franja promo, menú).
@@ -89,14 +100,13 @@ ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsA
   `ignaciogonzalez3010-arch/epycentro-del-sabor-web` (rama `main`, en teoría deploy
   automático en cada push — ver aviso abajo). Dominio de producción:
   `epycentro-del-sabor-web.vercel.app`.
-- **⚠️ Pendiente de revisar:** el 2026-08-17 dos pushes seguidos a `main` (commits `57bf2e6`
-  y `b36d36f`) **no dispararon un deploy automático** en Vercel (el último deployment
-  quedaba pegado en el commit anterior). Hubo que crear el deployment a mano vía la API de
-  Vercel (`POST /v13/deployments` con `gitSource`) las dos veces. Vale la pena revisar la
-  integración de Git del proyecto en Vercel (Settings → Git) por si el webhook de GitHub se
-  desconectó o perdió permisos — si no se soluciona, futuros pushes van a quedar sin
-  desplegar hasta que alguien dispare el deploy manualmente (desde el dashboard de Vercel
-  con "Redeploy", o pidiéndomelo).
+- **⚠️ Deploy automático intermitente:** el 2026-08-17 dos pushes seguidos a `main` (commits
+  `57bf2e6` y `b36d36f`) no dispararon deploy automático en Vercel (hubo que forzarlo por
+  API), pero un push posterior el mismo día (`39c1ec1`) sí disparó el webhook normalmente.
+  No está claro qué lo causó (¿rate limiting puntual de GitHub/Vercel?) — si un push no
+  parece reflejarse en `epycentro-del-sabor-web.vercel.app` después de un rato, revisar
+  Deployments en el dashboard de Vercel y, si no aparece uno nuevo, forzarlo manualmente
+  (botón "Redeploy" o pedírmelo).
 - Variables de entorno configuradas en Vercel (Production), todas **verificadas funcionando**:
   - `RESEND_API_KEY` — probada end-to-end el 2026-08-16 (correo con `BIENVENIDA10` llegó bien).
   - `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` — agregadas y probadas el 2026-08-17
@@ -114,6 +124,8 @@ ubicación (mapa embebido de Google Maps + horarios), contacto (botón de WhatsA
 
 ## Últimos cambios (commits)
 
+- `39c1ec1` — Rediseño visual (hero, nav de categorías, banner de menú con badges). Ver
+  "Rediseño visual 2026-08-17" arriba. No toca `script.js` ni `api/subscribe.js`.
 - `b36d36f` — Fix: usar `RAW` en vez de `USER_ENTERED` al escribir en Google Sheets (el `+`
   de los teléfonos se perdía).
 - `57bf2e6` — `api/subscribe.js` también guarda cada suscripción en Google Sheets (además de
